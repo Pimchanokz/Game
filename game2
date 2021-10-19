@@ -1,0 +1,324 @@
+#include<iostream>
+#include<conio.h>
+#include<dos.h> 
+#include <windows.h>
+#include <time.h>
+
+#define SCREEN_WIDTH 90
+#define SCREEN_HEIGHT 30
+#define WIN_WIDTH 70
+#define MENU_WIDTH 20
+#define GAP_SIZE 7
+#define Enemy_DIF 45
+
+using namespace std; 
+ 
+HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
+COORD CursorPosition;
+
+int wolfY[3];
+int wolfX[3];
+int wolfFlag[3];
+char girl[7][10] = {'Û','Û','Û','Û','Û','Û','Ü','Ü',' ',' ',
+    				' ','Û','Û','Û','Û','Û','Û','Û','Û',' ',
+    				' ','Û','Û',' ','Ü',' ','Ü',' ','Û',' ',
+    				' ','Û','Û',' ','ß',' ','ß',' ','Û',' ',
+    				' ','ß','ß','Û','Û','ß','Û','Û','ß',' ',
+   					' ','Ü','Û','Û','Û','Ü','Û','Û','Û','Ü',
+    				' ',' ',' ',' ','Û',' ','Û',' ',' ',' '};
+    				
+int girlPos = WIN_WIDTH/2;
+int score = 0;
+int apples[20][4];
+int applesLife[20];
+int bIndex = 0;
+
+void gotoxy(int x, int y){
+	CursorPosition.X = x;
+	CursorPosition.Y = y;
+	SetConsoleCursorPosition(console, CursorPosition);
+}
+void setcursor(bool visible, DWORD size) {
+	if(size == 0)
+		size = 20;	
+	
+	CONSOLE_CURSOR_INFO lpCursor;	
+	lpCursor.bVisible = visible;
+	lpCursor.dwSize = size;
+	SetConsoleCursorInfo(console,&lpCursor);
+}
+
+void setcolor(int fg,int bg)
+{
+ 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+ 	SetConsoleTextAttribute(hConsole, bg*16+fg);
+}
+/*void drawBorder(){ 
+	
+	for(int i=0; i<SCREEN_WIDTH; i++){ 
+		gotoxy(i,SCREEN_HEIGHT); cout<<"±";
+	}
+	
+	for(int i=0; i<SCREEN_HEIGHT; i++){
+		gotoxy(0,i); cout<<"±";
+		gotoxy(SCREEN_WIDTH,i); cout<<"±";
+	}
+	for(int i=0; i<SCREEN_HEIGHT; i++){
+		gotoxy(WIN_WIDTH,i); cout<<"±";
+	}
+}*/
+void genwolf(int ind){
+	wolfX[ind] = 3 + rand()%(WIN_WIDTH-10);  }
+	
+void drawwolf(int ind)
+{
+	setcolor(7,0);
+ 	if( wolfFlag[ind] == true ){
+ 	gotoxy(wolfX[ind], wolfY[ind]); cout<<" ÛÜ ÜÛ ";
+    gotoxy(wolfX[ind], wolfY[ind]+1); cout<<"ÜÛßÛßÛÜ";
+    gotoxy(wolfX[ind], wolfY[ind]+2); cout<<" ßÛÜÛß ";
+}
+}
+
+void erasewolf(int ind)
+{
+ 	if( wolfFlag[ind] == true ){
+ 	gotoxy(wolfX[ind], wolfY[ind]); cout<<"       ";
+    gotoxy(wolfX[ind], wolfY[ind]+1); cout<<"       ";
+    gotoxy(wolfX[ind], wolfY[ind]+2); cout<<"       ";
+}
+}
+
+void resetwolf(int ind){
+	erasewolf(ind);
+	wolfY[ind] = 4;
+	genwolf(ind);
+}
+void genapple(){
+	apples[bIndex][0] = 22;
+	apples[bIndex][1] = girlPos;
+	apples[bIndex][2] = 22; 
+	apples[bIndex][3] = girlPos+4; 
+	bIndex++;
+	if( bIndex == 20)
+		bIndex = 0;
+}
+void moveapple(){
+	for(int i=0; i<20; i++){
+		if( apples[i][0] > 2 )
+			apples[i][0]--;
+		else
+			apples[i][0] = 0;
+		
+		if( apples[i][2] > 2 )
+			apples[i][2]--;
+		else
+			apples[i][2] = 0;
+	} 
+}
+void drawapples()
+{for(int i=0; i<20; i++){
+		if( apples[i][0] >= 1 ){
+			setcolor(2,0);
+ 			gotoxy(apples[i][1],apples[i][0]-3); cout<<" ÜÛ";
+ 			setcolor(4,0);
+ 			gotoxy(apples[i][1],apples[i][0]-2); cout<<"ÛÛÛ";
+ 			gotoxy(apples[i][1],apples[i][0]-1); cout<<"ßßß";
+		}
+	}
+	
+}
+
+void eraseapples()
+{for(int i=0; i<20; i++){
+		if( apples[i][0] >= 1 ){
+			gotoxy(apples[i][1],apples[i][0]-3); cout<<"   ";
+ 			gotoxy(apples[i][1],apples[i][0]-2); cout<<"   ";
+ 			gotoxy(apples[i][1],apples[i][0]-1); cout<<"   ";
+		}
+	}
+}
+
+void eraseapple(int i){ 
+	gotoxy(apples[i][1],apples[i][0]-3); cout<<"   ";
+ 	gotoxy(apples[i][1],apples[i][0]-2); cout<<"   ";
+ 	gotoxy(apples[i][1],apples[i][0]-1); cout<<"   ";
+}
+void drawgirl(){
+	setcolor(4,0);
+	for(int i=0; i<7; i++){
+		for(int j=0; j<10; j++){
+			gotoxy(j+girlPos, i+22); cout<<girl[i][j];
+		}
+	}
+}
+void erasegirl(){
+	for(int i=0; i<7; i++){
+		for(int j=0; j<10; j++){
+			gotoxy(j+girlPos, i+22); cout<<" ";
+		}
+	}
+}
+ 
+int collision(){
+	if( wolfY[0]+ 4 >= 23 ){
+		if( wolfX[0] + 4 - girlPos >= 0 && wolfX[0] + 4 - girlPos < 8  ){
+			return 1;
+		}
+	}
+	return 0;
+}
+int appleHit(){
+	for(int i=0; i<20; i++){
+		for(int j=0; j<4; j+=2){
+			if( apples[i][j] != 0 ){
+				if( apples[i][j] >= wolfY[0] && apples[i][j] <= wolfY[0]+4 ){
+					if( apples[i][j+1] >= wolfX[0] && apples[i][j+1] <= wolfX[0]+4 ){
+						eraseapple(i);
+						apples[i][j] = 0;
+						resetwolf(0);
+						return 1;
+					}
+				}
+				if( apples[i][j] >= wolfY[1] && apples[i][j] <= wolfY[1]+4 ){
+					if( apples[i][j+1] >= wolfX[1] && apples[i][j+1] <= wolfX[1]+4 ){
+						eraseapple(i);
+						resetwolf(1); 
+						apples[i][j] = 0;
+						return 1;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+void gameover(){
+	system("cls");
+	cout<<endl;
+	cout<<"\t\t--------------------------"<<endl;
+	cout<<"\t\t-        Game Over       -"<<endl;
+	cout<<"\t\t--------------------------"<<endl<<endl;
+	cout<<"\t\tPress any key to go back to game.";
+	getch();
+}
+void updateScore(){
+	gotoxy(WIN_WIDTH + 7, 5);cout<<"Score: "<<score<<endl;
+}
+
+/*void instructions(){
+	
+	system("cls");
+	cout<<"Instructions";
+	cout<<"\n----------------";
+	cout<<"\n Press spacebar to make bird fly";
+	cout<<"\n\nPress any key to go back to menu";
+	getch();
+}*/
+
+void play(){
+	
+	girlPos = -1 + WIN_WIDTH/2;
+	score = 0;
+	wolfFlag[0] = 1;  
+	wolfFlag[1] = 1;
+	wolfY[0] = wolfY[1] = 4;
+	
+	for(int i=0; i<20; i++){
+		apples[i][0] = apples[i][1] = 0; 
+	}
+	
+	system("cls"); 
+	genwolf(0);
+	genwolf(1);
+	updateScore();
+	
+	/*gotoxy(WIN_WIDTH + 5, 2);cout<<"Space Shooter";
+	gotoxy(WIN_WIDTH + 6, 4);cout<<"----------";
+	gotoxy(WIN_WIDTH + 6, 6);cout<<"----------";
+	gotoxy(WIN_WIDTH + 7, 12);cout<<"Control ";
+	gotoxy(WIN_WIDTH + 7, 13);cout<<"-------- ";
+	gotoxy(WIN_WIDTH + 2, 14);cout<<" A Key - Left";
+	gotoxy(WIN_WIDTH + 2, 15);cout<<" D Key - Right";
+	gotoxy(WIN_WIDTH + 2, 16);cout<<" Spacebar = Shoot";*/
+	
+	gotoxy(10, 5);cout<<"Press any key to start";
+	getch();
+	gotoxy(10, 5);cout<<"                      ";
+	
+	while(1){
+		if(kbhit()){
+			char ch = getch();
+			if( ch=='a' || ch=='A' ){
+				if( girlPos > 2 )
+					girlPos -= 2;
+			}
+			if( ch=='d' || ch=='D' ){
+				if( girlPos < WIN_WIDTH-7 )
+					girlPos += 2;
+			}
+			if(ch==32){
+				genapple();
+			} 
+			if(ch==27){
+				break;
+			}
+		}
+		
+		drawgirl();
+		drawwolf(0);
+		drawwolf(1);
+		drawapples();
+		if( collision() == 1  ){
+			gameover();
+			return;
+		}
+		if(  appleHit() == 1 ){
+			score++;
+			updateScore(); 
+		} 
+		Sleep(200);
+		erasegirl();
+		erasewolf(0);
+		erasewolf(1);
+		eraseapples();
+		moveapple();   
+		
+		if( wolfFlag[0] == 1 )
+			wolfY[0] += 1;
+		if( wolfFlag[1] == 1 )
+			wolfY[1] += 1;
+		if( wolfY[0] > SCREEN_HEIGHT-5 ){ 
+			resetwolf(0); 
+		}
+		if( wolfY[1] > SCREEN_HEIGHT-5 ){ 
+			resetwolf(1); 
+		}
+	}
+}
+
+int main()
+{
+	setcursor(0,0); 
+	srand( (unsigned)time(NULL)); 
+	
+	play();
+	/*do{
+		system("cls");
+		gotoxy(10,5); cout<<" -------------------------- "; 
+		gotoxy(10,6); cout<<" |     Space Shooter      | "; 
+		gotoxy(10,7); cout<<" --------------------------";
+		gotoxy(10,9); cout<<"1. Start Game";
+		gotoxy(10,10); cout<<"2. Instructions";	 
+		gotoxy(10,11); cout<<"3. Quit";
+		gotoxy(10,13); cout<<"Select option: ";
+		char op = getche();
+		
+		if( op=='1') play();
+		//else if( op=='2') instructions();
+		else if( op=='3') exit(0);
+		
+	}while(1);*/
+	
+	return 0;
+}
